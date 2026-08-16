@@ -21,6 +21,10 @@ class Complex {
 		return Math.atan2(this.im, this.re);
 	}
 
+	dot(other) {
+		return this.re * other.re + this.im * other.im;
+	}
+
 	// Mutable
 	flip() {
 		this.re = -this.re;
@@ -96,6 +100,14 @@ class Complex {
 
 		this.re = magN * Math.cos(argN);
 		this.im = magN * Math.sin(argN);
+		return this;
+	}
+
+	norm() {
+		const mag = this.mag();
+		this.re /= mag;
+		this.im /= mag;
+
 		return this;
 	}
 }

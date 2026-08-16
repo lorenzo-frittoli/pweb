@@ -7,23 +7,6 @@ class QuadTree {
 		this.root = new RootClass(pos, size, 0, this.maxLevel);
 	}
 
-	upwardPass() {
-		this.root.upwardPass();
-	}
-
-	downwardPass() {
-		this.root.downwardPass([], [this.root]);
-	}
-
-	calculateForces() {
-		this.upwardPass();
-		this.downwardPass();
-	}
-
-	drawParticles(gameCanvas) {
-		this.root.drawParticles(gameCanvas);
-	}
-
 	insertParticle(particle) {
 		this.root.insertParticle(particle);
 	}
@@ -34,13 +17,32 @@ class QuadTree {
 		}
 	}
 
-	clear() {
+	clearParticles() {
 		this.root.clear();
+	}
+
+	upwardPass() {
+		this.root.upwardPass();
+	}
+
+	downwardPass() {
+		this.root.downwardPass([], [this.root]);
+	}
+
+	drawParticles(gameCanvas) {
+		this.root.drawParticles(gameCanvas);
 	}
 
 	update() {
 		this.root.update();
 	}
+
+	stepSimulation() {
+		this.upwardPass();
+		this.downwardPass();
+		this.update();
+	}
+
 }
 
 class QTNode {

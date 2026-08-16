@@ -1,3 +1,4 @@
+// Dataclass for mouse information
 class Mouse {
 	constructor() {
 		this.isActive = false;
@@ -16,14 +17,50 @@ class GameCanvas {
 		this._initMouseListeners();
 	}
 
+	// Clears canvas. Needs to be called before drawing every frame.
 	clear() {
 		this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 	}
 
+	// Returns mouse information
 	getMouse() {
 		return this.mouse;
 	}
 
+	// Draws a circle
+	//	strokeWidth = 0 -> fill
+	// 	strokeWidth > 0 -> stroke size
+	drawCircle(pos, radius, color, strokeWidth) {
+		const x = pos.re;
+		const y = pos.im;
+		this.ctx.beginPath();
+		this.ctx.arc(x, y, radius, 0, 2 * Math.PI);
+		if (strokeWidth === 0) {
+			this.ctx.fillStyle = color;
+			this.ctx.fill();
+		} else {
+			this.ctx.strokeStyle = color;
+			this.ctx.lineWidth = strokeWidth;
+			this.ctx.stroke();
+		}
+	}
+
+	// Writes text
+	drawText(text, pos, font, color, isCentered) {
+		const x = pos.re;
+		const y = pos.im;
+
+		if (isCentered) {
+			this.ctx.textAlign = "center";
+			this.ctx.textBaseline = "middle";
+		}
+
+		this.ctx.font = font;
+		this.ctx.fillStyle = color;
+		this.ctx.fillText(text, x, y);
+	}
+
+	// Adds a bunch of event listeners for mouse events
 	_initMouseListeners() {
 		this.canvas.addEventListener('mousemove', (e) => {
 			this.mouse.isActive = true;
@@ -54,19 +91,19 @@ class GameCanvas {
 		});
 	}
 
+	// Updates registered mouse position on event listener trigger
 	_updateMousePos(event) {
+		// Calculate scaling factors based on the size
+		// of the canvas and the bounding rect
 		const rect = this.canvas.getBoundingClientRect();
 		const scaleX = this.canvas.width / rect.width;
 		const scaleY = this.canvas.height / rect.height;
 
-		// 1. Calculate raw coordinates
 		const rawX = (event.clientX - rect.left) * scaleX;
 		const rawY = (event.clientY - rect.top) * scaleY;
 
-		// 2. CLAMP the coordinates!
-		// Math.max prevents it from going below 0.1 (Left/Top edges)
-		// Math.min prevents it from exceeding width/height (Right/Bottom edges)
-		// (We use a tiny 0.1 margin instead of 0 to prevent exact-edge Quadtree rejection bugs)
+		// Prevents errors if the mouse position is on the canvas border
+		// by clamping mouse coordinates.
 		this.mouse.pos.re = Math.max(0.1, Math.min(this.canvas.width - 0.1, rawX));
 		this.mouse.pos.im = Math.max(0.1, Math.min(this.canvas.height - 0.1, rawY));
 	}
