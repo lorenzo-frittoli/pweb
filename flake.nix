@@ -7,8 +7,14 @@
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, flake-utils }:
-    flake-utils.lib.eachDefaultSystem (system:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      flake-utils,
+    }:
+    flake-utils.lib.eachDefaultSystem (
+      system:
       let
         pkgs = import nixpkgs {
           inherit system;
@@ -17,15 +23,15 @@
 
         # PHP 8.0 with required database extensions (mysqli, pdo_mysql, session, json)
         phpEnv = pkgs.php80.buildEnv {
-          extensions = { all, enabled }: with all; [
-            mysqli
-            pdo_mysql
-            session
-            json
-            curl
-            mbstring
-            openssl
-          ];
+          extensions = { all, enabled }: with all;
+            [
+              mysqli
+              pdo_mysql
+              session
+              curl
+              mbstring
+              openssl
+            ];
           extraConfig = ''
             display_errors = On
             display_startup_errors = On
@@ -103,7 +109,8 @@
           php -S localhost:8000
         '';
 
-      in {
+      in
+      {
         devShells.default = pkgs.mkShell {
           name = "pweb-dev-shell";
 
