@@ -54,14 +54,15 @@
 
           if [ ! -d "$DEV_DIR/mysql" ]; then
             echo "-> Initializing local MariaDB database..."
-            mysql_install_db --datadir="$DEV_DIR" --basedir="${mariadb}" --auth-root-authentication-method=normal > /dev/null
+            # Calling the binaries directly from the Nix store prevents PATH pollution
+            ${mariadb}/bin/mysql_install_db --datadir="$DEV_DIR" --basedir="${mariadb}" --auth-root-authentication-method=normal > /dev/null
           fi
 
           if [ -f "$PID_FILE" ] && kill -0 $(cat "$PID_FILE") 2>/dev/null; then
             echo "-> MariaDB is already running."
           else
             echo "-> Starting MariaDB on socket $SOCKET..."
-            mysqld --datadir="$DEV_DIR" --socket="$SOCKET" --pid-file="$PID_FILE" --port=3306 --bind-address=127.0.0.1 > "$DEV_DIR/mysql.log" 2>&1 &
+            ${mariadb}/bin/mysqld --datadir="$DEV_DIR" --socket="$SOCKET" --pid-file="$PID_FILE" --port=3306 --bind-address=127.0.0.1 > "$DEV_DIR/mysql.log" 2>&1 &
             
             while [ ! -S "$SOCKET" ]; do sleep 0.5; done
             echo "-> MariaDB started successfully!"
@@ -119,7 +120,7 @@
 
           buildInputs = [
             phpEnv
-            mariadb
+            # mariadb has been removed from here to prevent command collisions
             startDb
             stopDb
             esportaDb
