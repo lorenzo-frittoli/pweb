@@ -1,8 +1,7 @@
 {
-  description = "PWEB Course Development Environment (PHP 8.0, MariaDB, Dev Tools)";
+  description = "PWEB Course Development Environment (PHP 8.0, MariaDB)";
 
   inputs = {
-    # Pinned to nixos-21.11 / 22.05 era for native PHP 8.0.x and MariaDB 10.x compatibility
     nixpkgs.url = "github:nixos/nixpkgs/nixos-21.11";
     flake-utils.url = "github:numtide/flake-utils";
   };
@@ -21,7 +20,7 @@
           config.allowUnfree = true;
         };
 
-        # PHP 8.0 with required database extensions (mysqli, pdo_mysql, session, json)
+        # PHP 8.0 with required database extensions
         phpEnv = pkgs.php80.buildEnv {
           extensions = { all, enabled }: with all;
             [
@@ -43,7 +42,8 @@
 
         mariadb = pkgs.mariadb;
 
-        # Helper scripts
+        # --- Backend Scripts ---
+
         startDb = pkgs.writeShellScriptBin "start-db" ''
           set -e
           DEV_DIR="$(pwd)/data/mysql"
@@ -63,10 +63,7 @@
             echo "-> Starting MariaDB on socket $SOCKET..."
             mysqld --datadir="$DEV_DIR" --socket="$SOCKET" --pid-file="$PID_FILE" --port=3306 --bind-address=127.0.0.1 > "$DEV_DIR/mysql.log" 2>&1 &
             
-            # Wait until socket is created
-            while [ ! -S "$SOCKET" ]; do
-              sleep 0.5
-            done
+            while [ ! -S "$SOCKET" ]; do sleep 0.5; done
             echo "-> MariaDB started successfully!"
           fi
         '';
@@ -84,7 +81,6 @@
           fi
         '';
 
-        # Emulates the course's EsportaDB.bat requirement
         esportaDb = pkgs.writeShellScriptBin "esporta-db" ''
           DEV_DIR="$(pwd)/data/mysql"
           SOCKET="$DEV_DIR/mysql.sock"
@@ -95,18 +91,25 @@
           fi
 
           read -p "Enter Database Name (e.g., cognome_matricola): " DBNAME
-          if [ -z "$DBNAME" ]; then
-            echo "Error: Database name cannot be empty."
-            exit 1
-          fi
+          if [ -z "$DBNAME" ]; then echo "Error: Database name cannot be empty."; exit 1; fi
 
-          mysqldump --socket="$SOCKET" -u root "$DBNAME" > "$DBNAME.sql"
+          ${mariadb}/bin/mysqldump --socket="$SOCKET" -u root "$DBNAME" > "$DBNAME.sql"
           echo "-> Database dumped successfully to $DBNAME.sql"
         '';
 
         startServer = pkgs.writeShellScriptBin "start-server" ''
           echo "-> Starting PHP Development Server at http://localhost:8000"
           php -S localhost:8000
+        '';
+
+        # --- DB CLI Wrappers ---
+
+        mysqlWrapper = pkgs.writeShellScriptBin "mysql" ''
+          exec ${mariadb}/bin/mysql -S "$(pwd)/data/mysql/mysql.sock" -u root "$@"
+        '';
+
+        mysqldumpWrapper = pkgs.writeShellScriptBin "mysqldump" ''
+          exec ${mariadb}/bin/mysqldump -S "$(pwd)/data/mysql/mysql.sock" -u root "$@"
         '';
 
       in
@@ -121,23 +124,21 @@
             stopDb
             esportaDb
             startServer
+            mysqlWrapper
+            mysqldumpWrapper
           ];
 
           shellHook = ''
             echo "======================================================="
-            echo "  PWEB Nix Development Shell (PHP 8.0 & MariaDB)       "
+            echo "  PWEB Nix Development Shell (PHP & MariaDB)           "
             echo "======================================================="
-            echo " Available commands:"
-            echo "   start-db     -> Initializes & starts local MariaDB server"
+            echo " Backend Commands:"
+            echo "   start-db     -> Starts local MariaDB server"
             echo "   stop-db      -> Stops MariaDB server"
-            echo "   start-server -> Starts PHP local web server (port 8000)"
-            echo "   esporta-db   -> Dumps DB into <dbname>.sql (like EsportaDB.bat)"
-            echo "   mysql        -> Direct CLI access: mysql -S ./data/mysql/mysql.sock -u root"
+            echo "   start-server -> Starts PHP server (port 8000)"
+            echo "   esporta-db   -> Dumps DB into <dbname>.sql"
+            echo "   mysql        -> Direct DB CLI access"
             echo "======================================================="
-
-            # Alias for easy CLI access to local MariaDB socket
-            alias mysql='mysql -S "$(pwd)/data/mysql/mysql.sock" -u root'
-            alias mysqldump='mysqldump -S "$(pwd)/data/mysql/mysql.sock" -u root'
           '';
         };
       }
