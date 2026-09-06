@@ -1,42 +1,94 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>PWeb</title>
-	<style>
-		body {
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			height: 100vh;
-			margin: 0;
-			background-color: #f4f4f9;
-		}
-
-		canvas {
-			background-color: #ffffff;
-			border: 2px solid #333333;
-			border-radius: 4px;
-		}
-	</style>
+	<title>Gioco Particelle - PWeb</title>
+	<link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
+	<aside class="sidebar">
+		<section id="auth-container" class="panel-box">
+			<h2>Accesso / Registrazione</h2>
+			<form id="auth-form">
+				<input type="text" id="username" name="username" placeholder="Nome Utente" required
+					autocomplete="username">
+				<input type="password" id="password" name="password" placeholder="Password" required
+					autocomplete="current-password">
+				<button type="submit" id="btn-login">Accedi</button>
+				<button type="button" id="btn-signup">Registrati</button>
+			</form>
+		</section>
 
-	<!-- The Canvas element with defined dimensions -->
-	<canvas id="myCanvas" width="600" height="600"></canvas>
+		<section id="logged-in-container" class="panel-box" hidden>
+			<h2 id="welcome-message"></h2>
+			<button type="button" id="btn-logout">Esci</button>
+		</section>
+
+		<section id="scores-container" class="panel-box">
+			<h3>Statistiche Giocatore</h3>
+			<div class="stat-item">
+				<span class="stat-label">Miglior Punteggio</span>
+				<span class="stat-value" id="stat-best-score">--</span>
+			</div>
+			<div class="stat-item">
+				<span class="stat-label">Punteggio Medio</span>
+				<span class="stat-value" id="stat-avg-score">--</span>
+			</div>
+			<div class="stat-item">
+				<span class="stat-label">Partite Giocate</span>
+				<span class="stat-value" id="stat-games-played">--</span>
+			</div>
+			<button type="button" id="btn-start">Inizia Partita</button>
+		</section>
+
+	</aside>
+
+	<main class="game-area">
+		<canvas id="myCanvas" width="800" height="800"></canvas>
+	</main>
+
+	<aside class="sidebar">
+		<section class="panel-box">
+			<h3>Classifica Migliori</h3>
+			<ul id="leaderboard" class="score-list">
+				<li>Nessun punteggio registrato.</li>
+			</ul>
+		</section>
+
+		<section class="panel-box manual-box">
+			<h3>Guida al Gioco</h3>
+			<div class="manual-text">
+				<p>L'obiettivo è spingere il maggior numero di particelle all'interno del cerchio arancione centrale
+					prima dello scadere del timer.</p>
+				<p>Dopo aver premuto "Inizia Partita" tieni premuto il tasto sinistro del mouse per spingere le
+					particelle.</p>
+				<p>Puoi creare un account per vedere le tue statistiche ed competere nella classifica.</p>
+				<p>Per l'interazione particellare e' stato implementato l'algoritmo Fast Multipole
+					Method (FMM) non adattivo per la simulazione n-body in O(N) ammortizzato descritto in questo paper
+					<a href="https://math.pku.edu.cn/teachers/litj/notes/numer_anal/FMM_Greengard_Rokhlin.pdf"
+						target="_blank" rel="noopener noreferrer">Greengard &amp; Rokhlin (1987)
+					</a>
+					.
+				</p>
+			</div>
+		</section>
+	</aside>
+
 	<script src="js/lib/math/complex.js"></script>
 	<script src="js/globals.js"></script>
 	<script src="js/lib/math/binomial.js"></script>
-	<script src="js/lib/helpers.js"></script>
-	<script src="js/lib/particle.js"></script>
-	<script src="js/lib/expansions.js"></script>
-	<script src="js/lib/quadtree.js"></script>
-	<script src="js/lib/canvas.js"></script>
-	<script src="js/lib/timer.js"></script>
-	<script src="js/lib/simulation.js"></script>
+	<script src="js/lib/app/lib/api.js"></script>
+	<script src="js/lib/app/lib/simulation/lib/canvas.js"></script>
+	<script src="js/lib/app/lib/simulation/lib/expansions.js"></script>
+	<script src="js/lib/app/lib/simulation/lib/particle.js"></script>
+	<script src="js/lib/app/lib/simulation/lib/quadtree.js"></script>
+	<script src="js/lib/app/lib/simulation/lib/timer.js"></script>
+	<script src="js/lib/app/lib/simulation/main.js"></script>
+	<script src="js/lib/app/lib/ui.js"></script>
+	<script src="js/lib/app/main.js"></script>
 	<script src="js/main.js"></script>
 </body>
 

@@ -1,3 +1,6 @@
+// Global constants
+// These are mainly used as general settings.
+
 // User interaction
 const MOUSE_PARTICLE_CHARGE = 10000;
 
@@ -9,7 +12,7 @@ const PARTICLE_RADIUS = 3;
 const PARTICLE_COLOR = "cyan";
 
 // Canvas
-const UNIVERSE_SIZE = 600;
+const UNIVERSE_SIZE = 800;
 const UNIVERSE_CENTER = new Complex(UNIVERSE_SIZE / 2, UNIVERSE_SIZE / 2);
 const CANVAS_ID = "myCanvas";
 
@@ -23,9 +26,11 @@ const SCOREZONE_RADIUS = (UNIVERSE_SIZE / 2) * 0.33;
 const SCOREZONE_STROKE = 4;
 const SCOREZONE_COLOR = "orange";
 
-// Score counter (number in the middle of the screen)
+// Score counter
 const SCORECOUNTER_FONT = "60px Arial";
 const SCORECOUNTER_COLOR = SCOREZONE_COLOR;
+const COUNTDOWN_DURATION_SECONDS = 4.0 * 0.75;
+const GAME_DURATION_SECONDS = 7.0;
 
 // Physics simulation
 const PHYSICS_FPS = 60;
@@ -38,3 +43,4 @@ const FRICTION = 0.99;
 const FLOAT_TOLERANCE = 1e-7;
 const NUMBER_OF_TERMS = 5;
 const QT_DEPTH = 3;
+

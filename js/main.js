@@ -1,2 +1,1 @@
-let simulation = new Simulation();
-simulation.runAnimation();
+const app = new App();

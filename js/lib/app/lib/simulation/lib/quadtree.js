@@ -7,13 +7,9 @@ class QuadTree {
 		this.root = new RootClass(pos, size, 0, this.maxLevel);
 	}
 
-	insertParticle(particle) {
-		this.root.insertParticle(particle);
-	}
-
 	insertParticles(particles) {
 		for (const particle of particles) {
-			this.insertParticle(particle);
+			this.root.insertParticle(particle);
 		}
 	}
 
@@ -21,28 +17,16 @@ class QuadTree {
 		this.root.clear();
 	}
 
-	upwardPass() {
-		this.root.upwardPass();
-	}
-
-	downwardPass() {
-		this.root.downwardPass([], [this.root]);
-	}
-
 	drawParticles(gameCanvas) {
 		this.root.drawParticles(gameCanvas);
 	}
 
-	update() {
+	stepSimulation() {
+		this.root.resetExpansions();
+		this.root.upwardPass();
+		this.root.downwardPass([], [this.root]);
 		this.root.update();
 	}
-
-	stepSimulation() {
-		this.upwardPass();
-		this.downwardPass();
-		this.update();
-	}
-
 }
 
 class QTNode {
@@ -52,13 +36,11 @@ class QTNode {
 		this.multipoleExpansion = new MultipoleExpansion();
 		this.localExpansion = new LocalExpansion();
 	}
-	listChildren() { console.assert(false, "Virtual function not overridden by child class"); }
-	upwardPass() { console.assert(false, "Virtual function not overridden by child class"); }
-	downwardPass() { console.assert(false, "Virtual function not overridden by child class"); }
-	drawParticles(gameCanvas) { console.assert(false, "Virtual function not overridden by child class"); }
-	insertParticle(particle) { console.assert(false, "Virtual function not overridden by child class"); }
-	clear() { console.assert(false, "Virtual function not overridden by child class"); }
-	update() { console.assert(false, "Virtual function not overridden by child class"); }
+
+	resetExpansions() {
+		this.multipoleExpansion = new MultipoleExpansion();
+		this.localExpansion = new LocalExpansion();
+	}
 
 	universalDownwardPass(targetList) {
 		for (const other of targetList) {
@@ -69,47 +51,38 @@ class QTNode {
 	}
 
 	is_touching(other) {
-		if (other.size != this.size) return false;
+		if (other.size !== this.size) return false;
 		const delta = this.pos.clone().sub(other.pos);
-		const deltaX = Math.abs(delta.re);
-		const deltaY = Math.abs(delta.re);
-		const deltaXok = deltaX <= this.size + FLOAT_TOLERANCE;
-		const deltaYok = deltaY <= this.size + FLOAT_TOLERANCE;
-		return deltaXok && deltaYok;
+		return Math.abs(delta.re) <= this.size + FLOAT_TOLERANCE && Math.abs(delta.im) <= this.size + FLOAT_TOLERANCE;
 	}
 
 	contains(particle) {
 		const delta = this.pos.clone().sub(particle.pos);
-		const deltaX = Math.abs(delta.re);
-		const deltaY = Math.abs(delta.im);
 		const halfSize = this.size / 2;
-		const deltaXok = deltaX <= halfSize + FLOAT_TOLERANCE;
-		const deltaYok = deltaY <= halfSize + FLOAT_TOLERANCE;
-		return deltaXok && deltaYok;
+		return Math.abs(delta.re) <= halfSize + FLOAT_TOLERANCE && Math.abs(delta.im) <= halfSize + FLOAT_TOLERANCE;
 	}
 }
 
 class QTBottomNode extends QTNode {
 	constructor(pos, size, currentLevel, maxLevel) {
 		super(pos, size);
-		this.particles = new Array();
+		this.particles = [];
+	}
 
-		console.assert(currentLevel === maxLevel, "Bottom node was not created on bottom level");
+	listChildren() { return []; }
+
+	resetExpansions() {
+		super.resetExpansions();
 	}
-	listChildren() {
-		return [];
-	}
+
 	upwardPass() {
 		this.multipoleExpansion.fromParticles(this.pos, this.particles);
 	}
+
 	downwardPass(targetList, neighboursList) {
 		this.universalDownwardPass(targetList);
-
 		for (let particle of this.particles) {
-			// Far-field interactions
 			this.localExpansion.applyForce(this.pos, particle);
-
-			// Near-field interactions
 			for (const nb of neighboursList) {
 				for (const other_particle of nb.particles) {
 					particle.interact(other_particle);
@@ -117,18 +90,19 @@ class QTBottomNode extends QTNode {
 			}
 		}
 	}
+
 	drawParticles(gameCanvas) {
 		for (const p of this.particles) {
 			p.draw(gameCanvas);
 		}
 	}
+
 	insertParticle(particle) {
-		console.assert(this.contains(particle), "Particle insertion error on bottom layer");
 		this.particles.push(particle);
 	}
 
 	clear() {
-		this.particles.length = 0; // Clears array
+		this.particles = [];
 	}
 
 	update() {
@@ -146,20 +120,23 @@ class QTMiddleNode extends QTNode {
 		const offset = childSize / 2;
 		const ChildClass = (childLevel === maxLevel) ? QTBottomNode : QTMiddleNode;
 
-		const NWpos = this.pos.clone().add(new Complex(-offset, -offset));
-		const NEpos = this.pos.clone().add(new Complex(+offset, -offset));
-		const SWpos = this.pos.clone().add(new Complex(-offset, +offset));
-		const SEpos = this.pos.clone().add(new Complex(+offset, +offset));
-
-		this.nw = new ChildClass(NWpos, childSize, childLevel, maxLevel);
-		this.ne = new ChildClass(NEpos, childSize, childLevel, maxLevel);
-		this.sw = new ChildClass(SWpos, childSize, childLevel, maxLevel);
-		this.se = new ChildClass(SEpos, childSize, childLevel, maxLevel);
+		this.nw = new ChildClass(this.pos.clone().add(new Complex(-offset, -offset)), childSize, childLevel, maxLevel);
+		this.ne = new ChildClass(this.pos.clone().add(new Complex(+offset, -offset)), childSize, childLevel, maxLevel);
+		this.sw = new ChildClass(this.pos.clone().add(new Complex(-offset, +offset)), childSize, childLevel, maxLevel);
+		this.se = new ChildClass(this.pos.clone().add(new Complex(+offset, +offset)), childSize, childLevel, maxLevel);
 	}
 
 	listChildren() {
 		return [this.nw, this.ne, this.sw, this.se];
 	}
+
+	resetExpansions() {
+		super.resetExpansions();
+		for (let child of this.listChildren()) {
+			child.resetExpansions();
+		}
+	}
+
 	upwardPass() {
 		this.multipoleExpansion = new MultipoleExpansion();
 		for (let child of this.listChildren()) {
@@ -167,9 +144,10 @@ class QTMiddleNode extends QTNode {
 			this.multipoleExpansion.add(child.multipoleExpansion.clone().shiftTo(child.pos, this.pos));
 		}
 	}
+
 	downwardPass(targetList, neighboursList) {
 		this.universalDownwardPass(targetList);
-		const potentialTargetList = new Array();
+		const potentialTargetList = [];
 		for (const nb of neighboursList) {
 			for (const child of nb.listChildren()) {
 				potentialTargetList.push(child);
@@ -177,8 +155,8 @@ class QTMiddleNode extends QTNode {
 		}
 
 		for (let child of this.listChildren()) {
-			let childTargetList = new Array();
-			let childNeighbourList = new Array();
+			let childTargetList = [];
+			let childNeighbourList = [];
 			for (const other of potentialTargetList) {
 				if (child.is_touching(other)) {
 					childNeighbourList.push(other);
@@ -190,11 +168,13 @@ class QTMiddleNode extends QTNode {
 			child.downwardPass(childTargetList, childNeighbourList);
 		}
 	}
+
 	drawParticles(gameCanvas) {
 		for (const child of this.listChildren()) {
 			child.drawParticles(gameCanvas);
 		}
 	}
+
 	insertParticle(particle) {
 		for (let child of this.listChildren()) {
 			if (child.contains(particle)) {
@@ -202,9 +182,6 @@ class QTMiddleNode extends QTNode {
 				return;
 			}
 		}
-		console.assert(false,
-			`Particle insertion error on middle layer\n${particle.pos.re} ${particle.pos.im}`
-		);
 	}
 
 	clear() {
